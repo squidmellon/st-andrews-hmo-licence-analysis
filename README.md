@@ -130,7 +130,3 @@ See [`docs/limitations.md`](docs/limitations.md) for additional detail.
 ## Attribution
 
 This repository presents work completed during a collaborative University of St Andrews research project. I completed the empirical work included here, excluding the survey component. The full team report is retained as supporting documentation and should be cited separately where appropriate.
-
-## Code availability
-
-The repository includes reconstructed and cleaned versions of the R and Python code printed in the report appendices. See [`CODE_NOTES.md`](CODE_NOTES.md) for corrections, assumptions, and reproduction status. The original appendix transcription is retained under `code/original_appendix/` for traceability.
