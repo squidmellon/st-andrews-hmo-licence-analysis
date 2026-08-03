@@ -1,6 +1,6 @@
 # Contribution Statement
 
-This repository is based on work completed during a collaborative research project in the School of Economics and Finance at the University of St Andrews.
+This repository is based on work completed during a research project in the School of Economics and Finance at the University of St Andrews.
 
 ## My contribution
 
@@ -22,7 +22,3 @@ The survey component of the broader project was completed by other team members 
 ## Use of the full report
 
 The complete research report was produced within a collaborative project environment and contains sections beyond the work displayed here. It is included only as supporting context. Readers should use the repository documentation and cleaned scripts to understand the scope of my individual contribution.
-
-## Data and code attribution
-
-Third-party data sources remain the property of their respective publishers. Public-register and archived-listing data should be cited to their original sources. Any code retained from collaborative work should include contributor attribution in the file header and repository history.
