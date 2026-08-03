@@ -1,0 +1,559 @@
+#Eliminate any empty rows that were created from converting the PDF to Excel
+and into R.
+df <- df[!is.na(df$Occupants),]
+#Remove data from wards that are not in the area of focus
+df <- df[!grepl('NW13|NW18', df$Ward),]
+#Accounting for the HMO licences issued for hotels in St Andrews. Making the
+assumption that these hotels would not be considered rental properties for
+students.
+df <- df[!grepl('Hotel', df$Name),]
+
+
+#There are duplicate entries of properties where multiple people have their
+name on the application form and this has created more than 1 row for that
+property.
+#The easiest way to remove these is in Excel using conditional formatting so
+we exported the dataset to Excel to sort this.
+df
+install.packages("writexl")
+library(writexl)
+write_xlsx(df,"/Users//aoifedoyle//desktop//Dataset.xlsx")
+
+#Once the dataset was cleaned up in Excel we imported it back into R to
+continue with data analysis
+library(readxl)
+data <- read_excel("Desktop/Full_HMO.xlsx")
+#made an extra column for year
+data$year <- as.POSIXlt(data$Issued)$year +1900
+#creates each year into data frames and stores in IssuedYear
+IssuedYear <- list()
+#Creating a loop
+for ( i in 2004:2022){
+  dat<- as.data.frame(data[data$year == i,])
+  IssuedYear <- append(IssuedYear,list(dat))
+}
+#Call by
+IssuedYear[1] #1 = 2004, 2 = 2005, ..., 19 = 2022
+#Can save each year as a separate dataframe using the following code.
+#Saves all licences issued in 2004 into a dataframe.
+IssuedYear2004 <- as.data.frame(IssuedYear[1]) 1 = 2004, 2 = 2005, ..., 19 =
+2022
+
+#The following code can be used to filter the dataset by year and number of
+occupants (number of potential bedrooms in the property).
+library(dplyr)
+data %>%
+  filter(data$year==2004, data$Occupants==3)
+
+#Created a script for searching for the number of active licences during a
+time period.
+data$Applied = as.Date(data$Applied, "%Y-%m-%d")
+data$Issued = as.Date(data$Issued, "%Y-%m-%d")
+data$Expiry = as.Date(data$Expiry, "%Y-%m-%d")
+data_subset <- subset(data, Issued>= "2017-01-01" & Issued<= "2017-02-01")
+
+#Looking at dataset that contains duplicated addresses.
+#Considering duplicates those that remain in our dataset as properties where
+the HMO licence has been reapplied for and renewed.
+data_duplicate <- data[which(duplicated(data$Address)==T),]
+#Dropout includes properties which have only had a HMO licence issued once
+across the whole time period
+data_dropout <- data[which(duplicated(data$Address)==F),]
+
+
+Appendix 2 ± Implementing HMO Database to Create Models
+
+library(readxl)
+
+hmo <- read_excel("Downloads/HMO By Years (1).xlsx", sheet = "Total HMO",
+n_max = 6000)
+View(hmo)
+str(hmo)
+
+install.packages("dplyr")
+library(dplyr)
+install.packages("lubridate")
+library(lubridate)
+install.packages("tidyverse")
+library(tidyverse)
+
+#number of HMOs that have starting issue date for each year
+hmo$year <- year(hmo$`Date Issued`)
+table(hmo$year)
+
+#Add "filler" end date to most recent data
+hmo[is.na(hmo$`Expire Date`), ]$`Expire Date` <- as.POSIXct("2022-12-30", tz
+= "UTC")
+hmo$yearrange <- year(hmo$`Expire Date`) - year(hmo$`Date Issued`) + 1
+
+try <- hmo[315,]
+
+#Finds number of active licenses per year
+rows <- c()
+years <- c()
+for (i in 1:nrow(hmo)){
+  rows <- append(rows, rep(i, hmo$yearrange[i]))
+  newyear <- hmo$year[i] + 0:(hmo$yearrange[i]-1)
+  years <- append(years, newyear)
+}
+hmo2 <- hmo[rows, ]
+hmo2$year <- years
+
+#Prints table and graph of annual total active licenses each year from 2010-
+2022
+count_license <- hmo2 %>% group_by(year) %>% summarise(n_license = n())
+count_license %>%
+  ggplot() +
+  geom_line(aes(x = year, y = n_license)) +
+  geom_point(aes(x = year, y = n_license)) +
+  scale_x_continuous(breaks=seq(2010,2022,1), limits=c(2010,2022)) +
+  scale_y_continuous(breaks=seq(600,1300,100), limits=c(600,1300)) +
+  ggtitle("Number of Active HMO Licenses Per Year") +
+  labs(y="Number of Active HMO Licenses", x="Year")
+
+#Counts and prints table of total number of available bedrooms from 2010-2022
+count_rooms <- hmo2 %>% group_by(year) %>% subset(year > 2010 & year <
+2022) %>%
+  summarise(room_3 = sum(`Tot Occs` == 3, na.rm=T),
+            room_4 = sum(`Tot Occs` == 4, na.rm=T),
+            room_5 = sum(`Tot Occs` == 5, na.rm=T),
+            room_6g = sum(`Tot Occs` >= 6, na.rm=T),
+            total = sum(`Tot Occs`, na.rm = T))
+
+#barplot graph annual total number of available bedrooms from 2010-2022
+bar_count <-
+count_rooms %>%
+  pivot_longer(room_3:room_6g, names_to = "Room", values_to = "Count")
+ggplot(bar_count) +
+  geom_bar(aes(x = year, y = Count, fill = Room), stat = "identity") +
+  scale_x_continuous(breaks=seq(2010,2022,1)) +
+  scale_y_continuous(breaks=seq(100,1300,100)) +
+  ggtitle("Yearly Bedroom Supply") +
+  labs(y="Number of Bedrooms Available", x="Year") +
+  scale_fill_discrete(name = "Property Type\n(by number of bedrooms)", labels
+= c("3 bedrooms", "4 bedrooms", "5 bedrooms", "6+ bedrooms"))
+
+
+
+#Line graph of annual total number of available bedrooms from 2010-2022
+count_rooms %>%
+  ggplot() +
+  geom_line(aes(x = year, y = total)) +
+  geom_point(aes(x = year, y = total)) +
+  scale_x_continuous(breaks=seq(2010,2022,1), limits=c(2010,2022)) +
+  scale_y_continuous(breaks=seq(4000,8000,200), limits=c(4000,8000)) +
+  ggtitle("Yearly Bedroom Supply") +
+  labs(y="Number of Bedrooms Available", x="Year", fill="Number of Bedrooms")
+Appendix 3 ± Percentile Bar Plot Table
+
+
+
+
+Appendix 4 ± Code for Attrition & Results
+install.packages("dplyr")
+library(dplyr)
+install.packages("lubridate")
+library(lubridate)
+install.packages("tidyverse")
+library(tidyverse)
+install.packages("stringr")
+library(stringr)
+install.packages("openxlsx")
+library(openxlsx)
+install.packages("broom")
+library(broom)
+library(readxl)
+#import dataset for usage
+hmo <- read_excel("Downloads/HMO By Years (1).xlsx", sheet = "Total HMO",
+n_max = 6000)
+View(hmo)
+str(hmo)
+
+
+# active 2015
+hmo_2015 <- hmo %>% filter(year(`Date Issued`) <= 2015, year(`Expire
+Date`) >= 2015)
+View(hmo_2015)
+str(hmo_2015)
+
+
+# active 2022
+hmo_2022 <- hmo %>% filter(year(`Date Issued`) <= 2022, year(`Expire
+Date`) >= 2022)
+View(hmo_2022)
+str(hmo_2022)
+
+str_detect(hmo$`HMO Address`, "KY16 9")
+hmo_conservation_2015 <- hmo_2015[grepl('KY16 9', hmo_2015$`HMO Address`),]
+hmo_noconservation_2015 <- hmo_2015[!grepl('KY16 9', hmo_2015$`HMO
+Address`),]
+
+hmo_conservation_2022 <- hmo_2022[grepl('KY16 9', hmo_2022$`HMO Address`),]
+hmo_noconservation_2022 <- hmo_2022[!grepl('KY16 9', hmo_2022$`HMO
+Address`),]
+
+# function to standardize the string of address
+# change all the Str or St to Street, Ave to Avenue, Blvd
+# change all the capitalize to uppercase for first letter and others lower
+# take out the punctuation
+std <- function(string) {
+  string <- string %>% str_to_title() %>%
+    str_remove_all(regex("[:punct:]")) %>%
+    str_replace_all(c("Str" = "Street",
+                      "St" = "Street",
+                      "Ave" = "Avenue",
+                      "Blvd" = "Boulevard")) %>%
+    str_replace_all("[\r\n]+", " ") %>%
+    str_replace_all("Fife", "") %>%
+    str_replace_all(" ", " ")
+}
+
+str_to_title("ABcdE def")
+
+address_2015 <- std(hmo_2015$`HMO Address`)
+address_2022 <- std(hmo_2022$`HMO Address`)
+
+# all the possible address: union()
+active_both <- intersect(address_2015, address_2022) %>% sort()
+active_both
+
+
+# were active in 2015 but not in 2022
+active_2015_only <- setdiff(address_2015, address_2022) %>% sort()
+active_2015_only
+
+
+#creates excel file of newly created datasets
+wb <- createWorkbook()
+addWorksheet(wb, "hmo_2015")
+addWorksheet(wb, "hmo_2022")
+addWorksheet(wb, "hmo_conservation_2015")
+addWorksheet(wb, "hmo_noconservation_2015")
+addWorksheet(wb, "hmo_conservation_2022")
+addWorksheet(wb, "hmo_noconservation_2022")
+addWorksheet(wb, "active_both")
+addWorksheet(wb, "active_2015_only")
+writeData(wb, "hmo_2015", hmo_2015, startRow = 1, startCol = 1)
+writeData(wb, "hmo_2022", hmo_2022, startRow = 1, startCol = 1)
+writeData(wb, "hmo_conservation_2015", hmo_conservation_2015, startRow = 1,
+startCol = 1)
+writeData(wb, "hmo_noconservation_2015", hmo_noconservation_2015, startRow =
+1, startCol = 1)
+writeData(wb, "hmo_conservation_2022", hmo_conservation_2022, startRow = 1,
+startCol = 1)
+writeData(wb, "hmo_noconservation_2022", hmo_noconservation_2022, startRow =
+1, startCol = 1)
+writeData(wb, "active_both", active_both, startRow = 1, startCol = 1)
+writeData(wb, "active_2015_only", active_2015_only, startRow = 1, startCol =
+1)
+# write
+saveWorkbook(wb, file = "Nov20.xlsx", overwrite = T)
+
+
+# any license last 2015-2022
+hmo_both <- hmo %>% filter(year(`Date Issued`) <= 2015, year(`Expire
+Date`) >= 2022)
+
+hmo_both <- hmo %>% mutate(active_2015 = ifelse(year(`Date Issued`) <= 2015 &
+year(`Expire Date`) >= 2015, T, F),
+                           active_2022 = ifelse(year(`Date Issued`) <= 2022 &
+year(`Expire Date`) >= 2022, T, F)) %>%
+  filter(active_2015 | active_2022) %>%
+  mutate(active_year = ifelse(active_2015 == T, "2015", "2022"),
+         conservation = str_detect(`HMO Address`, "KY16 9"),
+         `HMO Address` = std(`HMO Address`))
+
+with(hmo_both, table(active_year, conservation))
+
+hmo_con_count <- hmo_both %>% filter(conservation) %>% group_by(`Tot
+Occs`) %>% summarise(n_2015 = sum(active_2015),
+
+n_2022 = sum(active_2022),
+
+prcent = (n_2015 - n_2022)/n_2015*100)
+
+hmo_nocon_count <- hmo_both %>% filter(!conservation) %>% group_by(`Tot
+Occs`) %>% summarise(n_2015 = sum(active_2015),
+
+n_2022 = sum(active_2022),
+
+prcent = (n_2015 - n_2022)/n_2015*100)
+
+# chisq test for year and conservation, on the counts of 3 occs
+hmo_3 <- hmo_both %>% filter(`Tot Occs` == 3)
+chisq.test(hmo_3$active_year, hmo_3$conservation)
+
+hmo_4 <- hmo_both %>% filter(`Tot Occs` == 4)
+table(hmo_4$active_year, hmo_4$conservation)
+chisq.test(hmo_4$active_year, hmo_4$conservation)
+
+
+# logistic regression
+hmo_both <- hmo_both %>% mutate(
+                                active_both = `HMO Address` %in%
+intersect(address_2015, address_2022),
+                                bedroom = ifelse(`Tot Occs` < 6, `Tot Occs`,
+6))
+table(hmo_both$bedroom)
+
+fit1 <- glm(active_both ~ `Tot Occs` + conservation, family = "binomial",
+data = hmo_both %>% filter(active_2015))
+summary(fit1)
+
+with(hmo_both %>% filter(active_2015), table(active_both, `Tot Occs`))
+
+fit2 <- glm(active_both ~ as.factor(bedroom) + conservation, family =
+"binomial", data = hmo_both %>% filter(active_2015))
+summary(fit2)
+tidy(fit2, exponentiate = T)
+
+fit3 <- glm(active_both ~ `Tot Occs` + conservation==FALSE, family =
+"binomial", data = hmo_both %>% filter(active_2015))
+summary(fit3)
+
+
+Appendix 5 ± Code for web scraping
+
+from bs4 import BeautifulSoup
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+import pandas as pd
+import time
+import requests
+import re
+
+#set header
+headers = {
+  "User-Agent":
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like
+Gecko) Chrome/86.0.4240.111 Safari/537.36 Edg/86.0.622.51"
+}
+
+#selenium set up
+chrome_options = Options()
+chrome_options.add_argument('--no-sandbox')
+chrome_options.add_argument('--disable-dev-shm-usage')
+driver = webdriver.Chrome(options=chrome_options)
+
+#create a list for years we would like to search
+years = ["2012", "2013","2014","2015","2016","2017","2018","2019","2020"]
+
+#seperate the url of wayback into different parts
+url_Wayback_1 = "http://web.archive.org/"
+url_Wayback_2 = "1201000000*/https://www.zoopla.co.uk/to-
+rent/property/fife/st-andrews/"
+
+#create a list for link
+link_list = []
+
+#use for loop that goes through each year
+for year in years:
+  # /RDGVHOHQLXPZHEGULYHUZLWKWKHHDFK\HDU¶V:D\EDFNXUO
+  driver.get(f"{url_Wayback_1}web/{year}{url_Wayback_2}")
+
+  # Give some time for the browser to load the content
+  time.sleep(3)
+
+  # Use beautiful soup to get the web page
+  soup = BeautifulSoup(driver.page_source, 'lxml')
+ # limit the web page to only class "calendar-grid"
+ results = soup.find("div", class_="calendar-grid"
+
+ #find urls in results and append it into link_list
+ for link in results.find_all("a", href=True):
+   link_list.append(link['href'])
+
+#Create a list for dictionary
+Housing_list = []
+
+#go through links in link list from previous part
+for link in link_list:
+  link = "http://web.archive.org" + link
+
+ #use requests to load the page
+ r = requests.get(link, headers=headers)
+
+ #use beautiful soup to get the HTML
+ soup = BeautifulSoup(r.text, "html.parser")
+
+ #find all sections of web code with class "clearfix"
+ results = soup.find_all("li", class_="clearfix")
+
+ #fetch date from urls
+ date = link[27:35]
+
+ # go through each section of web code with class "clearfix"
+ for result in results:
+
+    # find rent, address, number of rooms from this section
+    Rent = result.find('a', class_='listing-results-price')
+    Address = result.find('a', class_='listing-results-address')
+    Type = result.find('h2', class_='listing-results-attr')
+
+    #use if condtion to eliminate situtaions where data can't be obtained
+    if Rent != None and Address != None and Type != None:
+
+      #modified format of obtained information
+      Rent = Rent.text.replace(',', '')
+      Rent_list = re.findall(r'\b\d+\b', Rent)
+      Type = ''.join(filter(str.isdigit, Type.text))
+
+      #add modified information into a dictionary
+      if Type != '':
+        Type = Type[0]
+        if date == "20120109":
+          Housing = {
+            'Date': date,
+            'Rent': int(Rent_list[1]),
+            'Type': Type,
+            'Address': Address.text,
+            'Link': link,
+          }
+        else:
+          Housing = {
+            'Date': date,
+            'Rent': int(Rent_list[0]),
+            'Type': Type,
+            'Address': Address.text,
+            'Link': link,
+          }
+
+    #add obtained dictionary into the Housing_list
+    Housing_list.append(Housing)
+
+driver.quit()
+#change the list of dictionary to dataframe
+df = pd.DataFrame(Housing_list)
+#change Date from string to datetime
+df['Date'] = pd.to_datetime(df['Date'], format='%Y%m%d')
+#delete duplicate
+df = df.drop_duplicates()
+#change the format to csv
+df.to_csv('housinginfo.csv')
+
+
+
+Appendix 5 ± Plot & Analysis of Ayton House Price
+#import packages and libraries
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
+from google.colab import files
+
+#read our collected Ayton house data
+df = pd.read_csv('Ayton (1).csv')
+
+#change Date info from string to datetime format
+df["Date"] = pd.to_datetime(df["Date"])
+
+#extract year of data into a new column
+df['year'] = pd.DatetimeIndex(df['Date']).year
+
+CPIH = [101,103.6,106,108.9,111.6,119]
+
+#extract the price and year of each type of rooms in Ayton house into nump
+y array
+non_ensuite_2 = df.loc[df['Type'] == '2 Bedroom Apartment Non En-
+suite','Rent_week'].to_numpy()
+non_ensuite_2t = df.loc[df['Type'] == '2 Bedroom Apartment Non En-
+suite','year'].tolist()
+CPIH_1 = [101,103.6,106,108.9,111.6,119]
+RP1 = (non_ensuite_2/CPIH_1)*100
+
+ensuite_2 = df.loc[df['Type'] == '2 Bedroom Apartment with En-
+suite','Rent_week'].to_numpy()
+ensuite_2t = df.loc[df['Type'] == '2 Bedroom Apartment with En-
+suite','year'].tolist()
+CPIH_2 = [101,103.6,106,108.9,111.6,119]
+RP2 = (ensuite_2/CPIH_2)*100
+
+ensuitelarge_2 = df.loc[df['Type'] == '2 Bedroom Large Apartment Ensuite',
+'Rent_week'].to_numpy()
+ensuitelarge_2t = df.loc[df['Type'] == '2 Bedroom Large Apartment Ensuite'
+,'year'].tolist()
+CPIH_3 = [106,108.9,111.6,119]
+RP3 = (ensuitelarge_2/CPIH_3)*100
+
+ensuite_4 = df.loc[df['Type'] == '4 Bedroom Apartment with En-
+suite','Rent_week'].to_numpy()
+ensuite_4t = df.loc[df['Type'] == '4 Bedroom Apartment with En-
+suite','year'].tolist()
+CPIH_4 = [101,103.6,106,108.9,111.6,119]
+RP4= (ensuite_4/CPIH_4)*100
+
+ensuite_5 = df.loc[df['Type'] == '5 Bedroom Apartment with En-
+suite','Rent_week'].to_numpy()
+ensuite_5t = df.loc[df['Type'] == '5 Bedroom Apartment with En-
+suite','year'].tolist()
+CPIH_5 = [101,103.6,106,108.9,111.6,119]
+RP5= (ensuite_5/CPIH_5)*100
+classic_studio = df.loc[df['Type'] == 'Classic Studio','Rent_week'].to_num
+py()
+classic_studiot = df.loc[df['Type'] == 'Classic Studio','year'].tolist()
+CPIH_6 = [101,103.6,106,108.9,111.6,119]
+RP6= (classic_studio/CPIH_6)*100
+
+compact_studio = df.loc[df['Type'] == 'Compact Studio','Rent_week'].to_num
+py()
+compact_studiot = df.loc[df['Type'] == 'Compact Studio','year'].tolist()
+CPIH_7 = [101,103.6,106,108.9,111.6,119]
+RP7= (compact_studio/CPIH_7)*100
+
+diamond_studio = df.loc[df['Type'] == 'Diamond Studio','Rent_week'].to_num
+py()
+diamond_studiot = df.loc[df['Type'] == 'Diamond Studio','year'].tolist()
+CPIH_8 = [111.6,119]
+RP8= (diamond_studio/CPIH_8)*100
+
+premium_studio = df.loc[df['Type'] == 'Premium Studio','Rent_week'].to_num
+py()
+premium_studiot = df.loc[df['Type'] == 'Premium Studio','year'].tolist()
+CPIH_9 = [101,103.6,106,108.9,111.6,119]
+RP9= (premium_studio/CPIH_9)*100
+
+#set up the plot
+_,ax1 = plt.subplots(1,1,figsize = (16,8))
+ax1.set_xlabel("Year")
+ax1.set_ylabel("Price(pounds per week)")
+ax1.set_title("Rent of Ayton House adjusted by CPIH")
+
+#scatter the data point of room prices
+ax1.plot(non_ensuite_2t, RP1, color = 'brown', label=r"2 bedroom non_ensui
+te")
+ax1.plot(ensuite_2t, RP2, color = 'darkorange', label=r"2 bedroom ensuite"
+)
+ax1.plot(ensuitelarge_2t, RP3, color = 'greenyellow', label=r"2 large bedr
+oom ensuite")
+ax1.plot(ensuite_4t, RP4, color = 'olive', label=r"4 bedroom ensuite")
+ax1.plot(ensuite_5t, RP5, color = 'teal', label=r"5 bedroom ensuite")
+ax1.plot(compact_studiot, RP7, color = 'skyblue', label=r"compact studio")
+ax1.plot(classic_studiot, RP6, color = 'violet', label=r"classic studio")
+ax1.plot(premium_studiot, RP9, color = 'turquoise', label=r"premium studio
+")
+ax1.plot(diamond_studiot, RP8, color = 'lightcoral', label=r"diamond studi
+o")
+ax1.scatter(non_ensuite_2t, RP1, color = 'brown')
+ax1.scatter(ensuite_2t, RP2, color = 'darkorange')
+ax1.scatter(ensuitelarge_2t, RP3, color = 'greenyellow')
+ax1.scatter(ensuite_4t, RP4, color = 'olive')
+ax1.scatter(ensuite_5t, RP5, color = 'teal')
+ax1.scatter(compact_studiot, RP7, color = 'skyblue')
+ax1.scatter(classic_studiot, RP6, color = 'violet')
+ax1.scatter(premium_studiot, RP9, color = 'turquoise')
+ax1.scatter(diamond_studiot, RP8, color = 'lightcoral')
+ax1.legend()
+
+RP_2018 = np.array([RP1[2],RP2[2],RP3[0],RP4[2],RP5[2],RP6[2],RP7[2],RP9[2
+]])
+RP_2020 = np.array([RP1[3],RP2[3],RP3[1],RP4[3],RP5[3],RP6[3],RP7[3],RP9[3
+]])
+RP_2021 = np.array([RP1[4],RP2[4],RP3[2],RP4[4],RP5[4],RP6[4],RP7[4],RP9[4
+]])
+RP_2022 = np.array([RP1[5],RP2[5],RP3[3],RP4[5],RP5[5],RP6[5],RP7[5],RP9[5
+]])
+change_freeze = RP_2020 - RP_2018
+change_2022 = RP_2022 - RP_2021
+percentage_change_freeze = change_freeze/RP_2018
+percentage_change_2022 = change_2022/RP_2021
+

@@ -1,0 +1,11 @@
+comparison_period,term,reported_quantity,estimate,p_value,interpretation
+2015-2022,Intercept / 3 occupants,retention,0.562,<2e-16,Reported as probability of retaining licence
+2015-2022,4 occupants,loss probability difference,-0.0175,0.663,Not statistically significant
+2015-2022,5 occupants,loss probability difference,-0.168,1.58e-05,Statistically significant
+2015-2022,6+ occupants,loss probability difference,-0.278,4.41e-07,Statistically significant
+2015-2022,Conservation area,loss probability difference,0.02,0.486,Not statistically significant
+2014-2021,Intercept / baseline,retention,0.669,<2e-16,Reported as probability of retaining licence
+2014-2021,4 occupants,loss probability difference,-0.0183,0.66,Not statistically significant
+2014-2021,5 occupants,loss probability difference,-0.195,1.83e-06,Statistically significant
+2014-2021,6+ occupants,loss probability difference,-0.355,3.88e-12,Statistically significant
+2014-2021,Conservation area,loss probability difference,0.005,0.868,Not statistically significant

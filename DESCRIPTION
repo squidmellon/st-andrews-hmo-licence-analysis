@@ -1,0 +1,14 @@
+Package: stAndrewsHMOAnalysis
+Type: Project
+Title: St Andrews HMO Licence Analysis
+Version: 0.1.0
+Imports:
+    broom,
+    dplyr,
+    ggplot2,
+    lubridate,
+    readr,
+    readxl,
+    stringr,
+    tidyr,
+    writexl
