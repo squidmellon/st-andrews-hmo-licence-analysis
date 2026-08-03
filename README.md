@@ -9,7 +9,6 @@
 - [Data dictionary](docs/data_dictionary.md)
 - [Limitations](docs/limitations.md)
 - [Contribution statement](docs/contribution_statement.md)
-- [Reproducibility status](docs/reproducibility_status.md)
 - [R code](code/r/)
 - [Python code](code/python/)
 - [Original HMO workbook](data/original/HMO_By_Years.xlsx)
@@ -124,8 +123,6 @@ st-andrews-hmo-licence-analysis/
 The HMO-register analysis is observational. A licence that no longer appeared as active may reflect nonrenewal, denial, owner exit, property conversion, administrative recording differences, or another cause. The analysis therefore documents licence attrition surrounding the policy but does not identify a fully causal policy effect.
 
 The rental-listing sample is also incomplete and nonrandom. Archived webpages were not consistently available, some websites required inaccessible secondary pages, and property listings did not always contain complete addresses. Results from this sample should therefore be interpreted as exploratory rather than representative of the entire rental market.
-
-See [`docs/limitations.md`](docs/limitations.md) for additional detail.
 
 ## Attribution
 
