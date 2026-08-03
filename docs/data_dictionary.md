@@ -57,7 +57,3 @@ This document describes the principal variables used in the HMO-register and his
 | `in_st_andrews` | Binary | Final geographic inclusion decision. |
 | `suspected_duplicate` | Binary | Flag indicating a repeated address-rent-property-type combination within a year. |
 | `manual_location_check` | Character/binary | Result of manual review for an address not resolved by automated geographic rules. |
-
-## Public-data recommendation
-
-A public repository should not include applicant names or other unnecessary personal information from the HMO register. A small synthetic or redacted sample can be provided to demonstrate file structure, while the repository documents how users may obtain the original public register from Fife Council.
