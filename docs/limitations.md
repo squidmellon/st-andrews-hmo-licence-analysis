@@ -71,21 +71,3 @@ Additional identifiers, such as flat number, image URL, letting agent, or licenc
 ## 10. COVID-19 and concurrent market changes
 
 The post-policy period overlaps with the COVID-19 pandemic and other changes in housing demand, university enrollment, landlord behavior, inflation, and the broader rental market. These factors complicate interpretation of rent and licence trends.
-
-## 11. Recommended language
-
-Appropriate:
-
-> Active HMO licences declined by approximately 44.5% between 2018 and 2022, surrounding the implementation of the 2019 licence freeze.
-
-Avoid:
-
-> The 2019 licence freeze caused a 44.5% decline in active HMO licences.
-
-Appropriate:
-
-> Larger properties had higher observed licence-retention rates than three-occupant properties in the estimated models.
-
-Avoid:
-
-> Larger properties were protected from the policy.
